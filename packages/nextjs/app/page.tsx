@@ -2,21 +2,29 @@
 
 import { useMemo } from "react";
 import type { NextPage } from "next";
+import { useAccount } from "wagmi";
 import { EventCard } from "~~/components/EventCard";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
 const Home: NextPage = () => {
+  const { address: userAddress } = useAccount();
+
   // smart contract
   const { data: events, isLoading: isLoadingEvents } = useScaffoldReadContract({
     contractName: "EventManager",
     functionName: "getAllEvents",
   });
 
+  const { data: owner } = useScaffoldReadContract({
+    contractName: "EventManager",
+    functionName: "owner",
+  });
+
   const activeEvents = useMemo(() => events?.filter(e => e.isActive), [events]);
   const upcomingEvents = useMemo(() => events?.filter(e => new Date(Number(e.date)) > new Date()), [events]);
 
   // 1. Manejo del estado de carga (Loading State)
-  if (isLoadingEvents) {
+  if (isLoadingEvents || userAddress === undefined || owner === undefined) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-base-200">
         <div className="flex flex-col items-center gap-4">
@@ -60,10 +68,13 @@ const Home: NextPage = () => {
               key={key}
               eventId={event.id}
               name={event.name}
+              description={event.description}
               date={new Date(Number(event.date))}
               maxCapacity={Number(event.maxCapacity)}
               registeredCount={Number(event.registeredCount)}
               isActive={event.isActive}
+              userAddress={userAddress}
+              owner={owner}
             />
           ))}
         </div>

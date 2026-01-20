@@ -19,6 +19,9 @@ contract EventManager is Ownable {
     mapping(uint256 => Event) public events;
     mapping(uint256 => mapping(address => bool)) public participantRegistry;
     mapping(uint256 => mapping(address => bool)) public confirmedAttendance;
+    
+    // NUEVO: Para poder listar los participantes en el frontend
+    mapping(uint256 => address[]) public eventParticipants;
 
     event EventCreated(uint256 indexed id, string name, uint256 capacity);
     event ParticipantRegistered(uint256 indexed eventId, address indexed participant);
@@ -28,7 +31,7 @@ contract EventManager is Ownable {
     error EventFull();
     error AlreadyRegistered();
     error NotRegistered();
-    error OwnerCannotRegister(); // Nuevo error
+    error OwnerCannotRegister();
 
     constructor(address _owner) Ownable(_owner) {}
 
@@ -44,7 +47,6 @@ contract EventManager is Ownable {
     }
 
     function register(uint256 _eventId) external {
-        // Corrección: El dueño no puede ser participante
         if (msg.sender == owner()) revert OwnerCannotRegister();
         
         Event storage ev = events[_eventId];
@@ -53,9 +55,20 @@ contract EventManager is Ownable {
         if (participantRegistry[_eventId][msg.sender]) revert AlreadyRegistered();
 
         participantRegistry[_eventId][msg.sender] = true;
+        
+        // ACTUALIZACIÓN: Guardamos la dirección en la lista iterable
+        eventParticipants[_eventId].push(msg.sender);
+        
         ev.registeredCount++;
 
         emit ParticipantRegistered(_eventId, msg.sender);
+    }
+
+    /**
+     * @dev Devuelve el array de direcciones inscritas para un evento específico.
+     */
+    function getParticipants(uint256 _eventId) external view returns (address[] memory) {
+        return eventParticipants[_eventId];
     }
 
     function validateAttendance(uint256 _eventId, address _participant) external onlyOwner {
