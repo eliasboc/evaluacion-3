@@ -11,12 +11,22 @@ type ModalListProps = {
 };
 
 type DataParticipantProps = {
+  index: number;
   eventId: bigint;
   participant: string;
   handleVerify: (participant: string) => void;
+  owner: string;
+  userAddress: string;
 };
 
-const DataParticipant: React.FC<DataParticipantProps> = ({ eventId, participant, handleVerify }) => {
+const DataParticipant: React.FC<DataParticipantProps> = ({
+  index,
+  eventId,
+  participant,
+  handleVerify,
+  owner,
+  userAddress,
+}) => {
   const { data: confirmedAttendance } = useScaffoldReadContract({
     contractName: "EventManager",
     functionName: "confirmedAttendance",
@@ -25,19 +35,22 @@ const DataParticipant: React.FC<DataParticipantProps> = ({ eventId, participant,
 
   return (
     <>
+      <td className="text-center">{index + 1}</td>
       <td className="text-center flex items-center justify-center">
         <Address address={participant} />
       </td>
-      <td className="text-center">
-        <button
-          className={`btn btn-success btn-sm gap-1 ${confirmedAttendance ? "btn-disabled" : ""}`}
-          onClick={() => handleVerify(participant)}
-          disabled={confirmedAttendance}
-        >
-          <CheckBadgeIcon className="h-5 w-5" />
-          {confirmedAttendance ? "Validado" : "Validar"}
-        </button>
-      </td>
+      {owner === userAddress && (
+        <td className="text-center">
+          <button
+            className={`btn btn-success btn-sm gap-1 ${confirmedAttendance ? "btn-disabled" : ""}`}
+            onClick={() => handleVerify(participant)}
+            disabled={confirmedAttendance}
+          >
+            <CheckBadgeIcon className="h-5 w-5" />
+            {confirmedAttendance ? "Validado" : "Validar"}
+          </button>
+        </td>
+      )}
     </>
   );
 };
@@ -67,12 +80,17 @@ export const ModalList: React.FC<ModalListProps> = ({ name, eventId, owner, user
               </tr>
             </thead>
             <tbody>
-              {/* Por ahora pongo una fila de ejemplo para que veas el diseño */}
               {participants?.map((participant, index) => {
                 return (
                   <tr key={index}>
-                    <th className="text-center">{index + 1}</th>
-                    <DataParticipant eventId={eventId} participant={participant} handleVerify={handleVerify} />
+                    <DataParticipant
+                      index={index}
+                      eventId={eventId}
+                      participant={participant}
+                      handleVerify={handleVerify}
+                      owner={owner}
+                      userAddress={userAddress}
+                    />
                   </tr>
                 );
               })}

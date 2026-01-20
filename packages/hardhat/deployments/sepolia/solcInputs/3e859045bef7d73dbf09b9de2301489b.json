@@ -1,0 +1,42 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "@openzeppelin/contracts/access/Ownable.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n// OpenZeppelin Contracts (last updated v5.0.0) (access/Ownable.sol)\n\npragma solidity ^0.8.20;\n\nimport {Context} from \"../utils/Context.sol\";\n\n/**\n * @dev Contract module which provides a basic access control mechanism, where\n * there is an account (an owner) that can be granted exclusive access to\n * specific functions.\n *\n * The initial owner is set to the address provided by the deployer. This can\n * later be changed with {transferOwnership}.\n *\n * This module is used through inheritance. It will make available the modifier\n * `onlyOwner`, which can be applied to your functions to restrict their use to\n * the owner.\n */\nabstract contract Ownable is Context {\n    address private _owner;\n\n    /**\n     * @dev The caller account is not authorized to perform an operation.\n     */\n    error OwnableUnauthorizedAccount(address account);\n\n    /**\n     * @dev The owner is not a valid owner account. (eg. `address(0)`)\n     */\n    error OwnableInvalidOwner(address owner);\n\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\n\n    /**\n     * @dev Initializes the contract setting the address provided by the deployer as the initial owner.\n     */\n    constructor(address initialOwner) {\n        if (initialOwner == address(0)) {\n            revert OwnableInvalidOwner(address(0));\n        }\n        _transferOwnership(initialOwner);\n    }\n\n    /**\n     * @dev Throws if called by any account other than the owner.\n     */\n    modifier onlyOwner() {\n        _checkOwner();\n        _;\n    }\n\n    /**\n     * @dev Returns the address of the current owner.\n     */\n    function owner() public view virtual returns (address) {\n        return _owner;\n    }\n\n    /**\n     * @dev Throws if the sender is not the owner.\n     */\n    function _checkOwner() internal view virtual {\n        if (owner() != _msgSender()) {\n            revert OwnableUnauthorizedAccount(_msgSender());\n        }\n    }\n\n    /**\n     * @dev Leaves the contract without owner. It will not be possible to call\n     * `onlyOwner` functions. Can only be called by the current owner.\n     *\n     * NOTE: Renouncing ownership will leave the contract without an owner,\n     * thereby disabling any functionality that is only available to the owner.\n     */\n    function renounceOwnership() public virtual onlyOwner {\n        _transferOwnership(address(0));\n    }\n\n    /**\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\n     * Can only be called by the current owner.\n     */\n    function transferOwnership(address newOwner) public virtual onlyOwner {\n        if (newOwner == address(0)) {\n            revert OwnableInvalidOwner(address(0));\n        }\n        _transferOwnership(newOwner);\n    }\n\n    /**\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\n     * Internal function without access restriction.\n     */\n    function _transferOwnership(address newOwner) internal virtual {\n        address oldOwner = _owner;\n        _owner = newOwner;\n        emit OwnershipTransferred(oldOwner, newOwner);\n    }\n}\n"
+    },
+    "@openzeppelin/contracts/utils/Context.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n// OpenZeppelin Contracts (last updated v5.0.1) (utils/Context.sol)\n\npragma solidity ^0.8.20;\n\n/**\n * @dev Provides information about the current execution context, including the\n * sender of the transaction and its data. While these are generally available\n * via msg.sender and msg.data, they should not be accessed in such a direct\n * manner, since when dealing with meta-transactions the account sending and\n * paying for execution may not be the actual sender (as far as an application\n * is concerned).\n *\n * This contract is only required for intermediate, library-like contracts.\n */\nabstract contract Context {\n    function _msgSender() internal view virtual returns (address) {\n        return msg.sender;\n    }\n\n    function _msgData() internal view virtual returns (bytes calldata) {\n        return msg.data;\n    }\n\n    function _contextSuffixLength() internal view virtual returns (uint256) {\n        return 0;\n    }\n}\n"
+    },
+    "contracts/EventManager.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity >=0.8.0 <0.9.0;\r\n\r\nimport \"@openzeppelin/contracts/access/Ownable.sol\";\r\n\r\ncontract EventManager is Ownable {\r\n\r\n    struct Event {\r\n        uint256 id;\r\n        string name;\r\n        string description;\r\n        uint256 date;\r\n        uint256 maxCapacity;\r\n        uint256 registeredCount;\r\n        bool isActive;\r\n    }\r\n\r\n    uint256 public eventCount;\r\n    mapping(uint256 => Event) public events;\r\n    mapping(uint256 => mapping(address => bool)) public participantRegistry;\r\n    mapping(uint256 => mapping(address => bool)) public confirmedAttendance;\r\n    \r\n    // NUEVO: Para poder listar los participantes en el frontend\r\n    mapping(uint256 => address[]) public eventParticipants;\r\n\r\n    event EventCreated(uint256 indexed id, string name, uint256 capacity);\r\n    event ParticipantRegistered(uint256 indexed eventId, address indexed participant);\r\n    event AttendanceConfirmed(uint256 indexed eventId, address indexed participant);\r\n\r\n    error EventNotActive();\r\n    error EventFull();\r\n    error AlreadyRegistered();\r\n    error NotRegistered();\r\n    error OwnerCannotRegister();\r\n\r\n    constructor(address _owner) Ownable(_owner) {}\r\n\r\n    function createEvent(\r\n        string memory _name, \r\n        string memory _description,\r\n        uint256 _date, \r\n        uint256 _capacity\r\n    ) external onlyOwner {\r\n        eventCount++;\r\n        events[eventCount] = Event(eventCount, _name, _description, _date, _capacity, 0, true);\r\n        emit EventCreated(eventCount, _name, _capacity);\r\n    }\r\n\r\n    function register(uint256 _eventId) external {\r\n        if (msg.sender == owner()) revert OwnerCannotRegister();\r\n        \r\n        Event storage ev = events[_eventId];\r\n        if (!ev.isActive) revert EventNotActive();\r\n        if (ev.registeredCount >= ev.maxCapacity) revert EventFull();\r\n        if (participantRegistry[_eventId][msg.sender]) revert AlreadyRegistered();\r\n\r\n        participantRegistry[_eventId][msg.sender] = true;\r\n        \r\n        // ACTUALIZACIÓN: Guardamos la dirección en la lista iterable\r\n        eventParticipants[_eventId].push(msg.sender);\r\n        \r\n        ev.registeredCount++;\r\n\r\n        emit ParticipantRegistered(_eventId, msg.sender);\r\n    }\r\n\r\n    /**\r\n     * @dev Devuelve el array de direcciones inscritas para un evento específico.\r\n     */\r\n    function getParticipants(uint256 _eventId) external view returns (address[] memory) {\r\n        return eventParticipants[_eventId];\r\n    }\r\n\r\n    function validateAttendance(uint256 _eventId, address _participant) external onlyOwner {\r\n        if (!participantRegistry[_eventId][_participant]) revert NotRegistered();\r\n        confirmedAttendance[_eventId][_participant] = true;\r\n        emit AttendanceConfirmed(_eventId, _participant);\r\n    }\r\n\r\n    function hasCertificate(uint256 _eventId, address _participant) external view returns (bool) {\r\n        return confirmedAttendance[_eventId][_participant];\r\n    }\r\n\r\n    function getAllEvents() external view returns (Event[] memory) {\r\n        Event[] memory allEvents = new Event[](eventCount);\r\n        for (uint256 i = 1; i <= eventCount; i++) {\r\n            allEvents[i - 1] = events[i];\r\n        }\r\n        return allEvents;\r\n    }\r\n}"
+    }
+  },
+  "settings": {
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "evmVersion": "paris",
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata",
+          "devdoc",
+          "userdoc",
+          "storageLayout",
+          "evm.gasEstimates"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    },
+    "metadata": {
+      "useLiteralContent": true
+    }
+  }
+}

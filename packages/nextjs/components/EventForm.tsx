@@ -87,7 +87,7 @@ export const EventForm: React.FC<EventFormProps> = ({ userAddress, owner }) => {
           {/* Fecha */}
           <div className="form-control w-full">
             <label className="label">
-              <span className="label-text font-bold text-base">Fecha y Hora *</span>
+              <span className="label-text font-bold text-base">Fecha *</span>
             </label>
             <input
               type="date"
