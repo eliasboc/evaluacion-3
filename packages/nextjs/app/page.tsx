@@ -1,116 +1,79 @@
 "use client";
 
-// import Link from "next/link";
-// import { Address } from "@scaffold-ui/components";
+import { useMemo } from "react";
 import type { NextPage } from "next";
-// import { hardhat } from "viem/chains";
-// import { BugAntIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { EventCard } from "~~/components/EventCard";
+import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
-// import { useTargetNetwork } from "~~/hooks/scaffold-eth";
-
-const MOCK_EVENTS: any[] = [
-  {
-    name: "Workshop de React",
-    date: "2026-02-15",
-    maxCapacity: 30,
-    registeredCount: 28,
-    isActive: true,
-  },
-  {
-    name: "Conferencia de Next.js",
-    date: "2026-03-01",
-    maxCapacity: 50,
-    registeredCount: 45,
-    isActive: true,
-  },
-  {
-    name: "Taller de TypeScript",
-    date: "2026-03-10",
-    maxCapacity: 25,
-    registeredCount: 25,
-    isActive: true,
-  },
-  {
-    name: "Webinar de Performance",
-    date: "2026-02-28",
-    maxCapacity: 100,
-    registeredCount: 35,
-    isActive: true,
-  },
-  {
-    name: "Meetup de Developers",
-    date: "2026-01-30",
-    maxCapacity: 40,
-    registeredCount: 15,
-    isActive: false,
-  },
-  {
-    name: "Hackathon Web3",
-    date: "2026-04-05",
-    maxCapacity: 60,
-    registeredCount: 22,
-    isActive: true,
-  },
-];
-
-//TODO: debo poner un modal en el form para asi botar al estudiante cuando se meta
-//TODO: ver si me da chance de crear los NFT
 const Home: NextPage = () => {
-  // const { address: connectedAddress } = useAccount();
-  // const { targetNetwork } = useTargetNetwork();
+  // smart contract
+  const { data: events, isLoading: isLoadingEvents } = useScaffoldReadContract({
+    contractName: "EventManager",
+    functionName: "getAllEvents",
+  });
 
-  const activeEvents = MOCK_EVENTS.filter(e => e.isActive);
-  const upcomingEvents = MOCK_EVENTS.filter(e => new Date(e.date) > new Date());
+  const activeEvents = useMemo(() => events?.filter(e => e.isActive), [events]);
+  const upcomingEvents = useMemo(() => events?.filter(e => new Date(Number(e.date)) > new Date()), [events]);
+
+  // 1. Manejo del estado de carga (Loading State)
+  if (isLoadingEvents) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-base-200">
+        <div className="flex flex-col items-center gap-4">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+          <p className="text-lg font-medium animate-pulse">Cargando eventos desde la blockchain...</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main>
-      <section className="space-y-8 px-4 py-12 sm:px-6 lg:px-8">
+      <section className="space-y-8 px-4 py-5 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="space-y-3">
-          <h1 className="text-4xl font-bold tracking-tight">Eventos Disponibles</h1>
-          <p className="text-lg text-muted-foreground">
-            Descubre y regístrate en nuestros próximos eventos. Tenemos {activeEvents.length} evento
-            {activeEvents.length !== 1 ? "s" : ""} activo
-            {activeEvents.length !== 1 ? "s" : ""}.
-          </p>
+          <h1 className="text-4xl font-bold text-center tracking-tight text-base-content">Eventos Disponibles</h1>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border bg-card p-4">
-            <p className="text-sm font-medium text-muted-foreground">Eventos Activos</p>
-            <p className="mt-2 text-3xl font-bold">{activeEvents.length}</p>
+          <div className="rounded-lg border border-base-300 bg-base-100 p-4 shadow-sm">
+            <p className="text-sm font-medium opacity-60">Eventos Activos</p>
+            <p className="mt-2 text-3xl font-bold">{activeEvents?.length || 0}</p>
           </div>
-          <div className="rounded-lg border bg-card p-4">
-            <p className="text-sm font-medium text-muted-foreground">Próximos Eventos</p>
-            <p className="mt-2 text-3xl font-bold">{upcomingEvents.length}</p>
+          <div className="rounded-lg border border-base-300 bg-base-100 p-4 shadow-sm">
+            <p className="text-sm font-medium opacity-60">Próximos Eventos</p>
+            <p className="mt-2 text-3xl font-bold">{upcomingEvents?.length || 0}</p>
           </div>
-          <div className="rounded-lg border bg-card p-4">
-            <p className="text-sm font-medium text-muted-foreground">Total de Registros</p>
-            <p className="mt-2 text-3xl font-bold">{MOCK_EVENTS.reduce((acc, e) => acc + e.registeredCount, 0)}</p>
+          <div className="rounded-lg border border-base-300 bg-base-100 p-4 shadow-sm">
+            <p className="text-sm font-medium opacity-60">Total de Registros</p>
+            <p className="mt-2 text-3xl font-bold">
+              {events?.reduce((acc, e) => acc + Number(e.registeredCount), 0) || 0}
+            </p>
           </div>
         </div>
 
         {/* Events Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {MOCK_EVENTS.map((event, key) => (
+          {events?.map((event, key) => (
             <EventCard
               key={key}
+              eventId={event.id}
               name={event.name}
-              date={event.date}
-              maxCapacity={event.maxCapacity}
-              registeredCount={event.registeredCount}
+              date={new Date(Number(event.date))}
+              maxCapacity={Number(event.maxCapacity)}
+              registeredCount={Number(event.registeredCount)}
               isActive={event.isActive}
             />
           ))}
         </div>
 
-        {/* Empty State */}
-        {MOCK_EVENTS.length === 0 && (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/50 py-12">
-            <p className="text-lg font-medium text-muted-foreground">No hay eventos disponibles</p>
-            <p className="mt-2 text-sm text-muted-foreground">Próximamente anunciaremos nuevos eventos</p>
+        {/* Empty State - Solo se muestra si ya cargó y no hay nada */}
+        {!isLoadingEvents && events?.length === 0 && (
+          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-base-300 bg-base-200/50 py-20 text-center">
+            <div className="text-5xl mb-4">📅</div>
+            <p className="text-xl font-bold opacity-80">No hay eventos disponibles</p>
+            <p className="mt-2 opacity-60">Próximamente anunciaremos nuevos eventos académicos.</p>
           </div>
         )}
       </section>

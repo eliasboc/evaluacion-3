@@ -1,16 +1,25 @@
 "use client";
 
 import { CalendarIcon, UserIcon } from "@heroicons/react/20/solid";
+import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
 interface EventCardProps {
+  eventId: bigint;
   name: string;
-  date: string;
+  date: Date;
   maxCapacity: number;
   registeredCount: number;
   isActive: boolean;
 }
 
-export const EventCard: React.FC<EventCardProps> = ({ name, date, maxCapacity, registeredCount, isActive }) => {
+export const EventCard: React.FC<EventCardProps> = ({
+  eventId,
+  name,
+  date,
+  maxCapacity,
+  registeredCount,
+  isActive,
+}) => {
   const capacityPercentage = (registeredCount / maxCapacity) * 100;
   const availableSpots = maxCapacity - registeredCount;
   const isFull = registeredCount >= maxCapacity;
@@ -20,6 +29,17 @@ export const EventCard: React.FC<EventCardProps> = ({ name, date, maxCapacity, r
     month: "long",
     day: "numeric",
   });
+
+  //smart contract
+  const { writeContractAsync: writeRegisterAsync } = useScaffoldWriteContract({ contractName: "EventManager" });
+
+  const handleRegister = async () => {
+    try {
+      await writeRegisterAsync({ functionName: "register", args: [eventId] });
+    } catch (error) {
+      console.error("Error al inscribirse:", error);
+    }
+  };
 
   return (
     <div className={`card bg-base-100 shadow-xl border border-base-300 ${!isActive ? "opacity-60" : ""}`}>
@@ -63,7 +83,7 @@ export const EventCard: React.FC<EventCardProps> = ({ name, date, maxCapacity, r
         <div className="stats bg-base-200 shadow-inner">
           <div className="stat py-2 px-4">
             <div className="stat-title text-xs">Cupos disponibles</div>
-            <div className={`stat-value text-lg ${isFull ? "text-error" : "text-primary"}`}>
+            <div className={`stat-value text-lg ${isFull ? "text-error" : "text-base-content"}`}>
               {Math.max(availableSpots, 0)}
             </div>
           </div>
@@ -73,6 +93,7 @@ export const EventCard: React.FC<EventCardProps> = ({ name, date, maxCapacity, r
         <div className="card-actions mt-2">
           <button
             className={`btn btn-block ${!isActive || isFull ? "btn-disabled" : "btn-primary"}`}
+            onClick={handleRegister}
             disabled={!isActive || isFull}
           >
             {!isActive ? "Evento Inactivo" : isFull ? "Cupo Lleno" : "Inscribirme Ahora"}
