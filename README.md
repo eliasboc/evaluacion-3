@@ -1,80 +1,202 @@
-# 🏗 Scaffold-ETH 2
+# 📅 Sistema de Gestión de Eventos Académicos
 
-<h4 align="center">
-  <a href="https://docs.scaffoldeth.io">Documentation</a> |
-  <a href="https://scaffoldeth.io">Website</a>
-</h4>
+Una aplicación descentralizada (dApp) para la gestión transparente de eventos académicos, construida sobre la blockchain de Ethereum. Este sistema permite crear, gestionar y registrar participantes en eventos de manera inmutable y descentralizada.
 
-🧪 An open-source, up-to-date toolkit for building decentralized applications (dapps) on the Ethereum blockchain. It's designed to make it easier for developers to create and deploy smart contracts and build user interfaces that interact with those contracts.
+## 🎯 Descripción del Proyecto
 
-⚙️ Built using NextJS, RainbowKit, Hardhat, Wagmi, Viem, and Typescript.
+Este proyecto es una plataforma Web3 que facilita la administración de eventos académicos utilizando smart contracts. Los organizadores pueden crear eventos, los participantes pueden registrarse, y el sistema mantiene un registro inmutable de todas las inscripciones y asistencias confirmadas en la blockchain.
 
-- ✅ **Contract Hot Reload**: Your frontend auto-adapts to your smart contract as you edit it.
-- 🪝 **[Custom hooks](https://docs.scaffoldeth.io/hooks/)**: Collection of React hooks wrapper around [wagmi](https://wagmi.sh/) to simplify interactions with smart contracts with typescript autocompletion.
-- 🧱 [**Components**](https://docs.scaffoldeth.io/components/): Collection of common web3 components to quickly build your frontend.
-- 🔥 **Burner Wallet & Local Faucet**: Quickly test your application with a burner wallet and local faucet.
-- 🔐 **Integration with Wallet Providers**: Connect to different wallet providers and interact with the Ethereum network.
+### Características Principales
 
-![Debug Contracts tab](https://github.com/scaffold-eth/scaffold-eth-2/assets/55535804/b237af0c-5027-4849-a5c1-2e31495cccb1)
+- ✅ **Creación de Eventos**: Los administradores pueden crear eventos con nombre, descripción, fecha y capacidad máxima
+- 👥 **Registro de Participantes**: Los usuarios pueden inscribirse en eventos activos directamente desde la dApp
+- 📊 **Dashboard en Tiempo Real**: Visualización de estadísticas de eventos activos, próximos eventos y total de registros
+- 🔐 **Validación de Asistencia**: Sistema de confirmación de asistencia controlado por el propietario del contrato
+- 🎫 **Certificados de Participación**: Registro inmutable de asistencias confirmadas en la blockchain
+- 🔄 **Hot Reload**: La interfaz se actualiza automáticamente al modificar el smart contract
 
-## Requirements
+## 🏗 Stack Tecnológico
 
-Before you begin, you need to install the following tools:
+- **Frontend**: Next.js 14 (App Router), React, TypeScript, TailwindCSS, DaisyUI
+- **Smart Contracts**: Solidity ^0.8.0, OpenZeppelin (Ownable)
+- **Blockchain Tools**: Hardhat, Wagmi, Viem
+- **Web3 Integration**: RainbowKit para conexión de wallets
 
-- [Node (>= v20.18.3)](https://nodejs.org/en/download/)
-- Yarn ([v1](https://classic.yarnpkg.com/en/docs/install/) or [v2+](https://yarnpkg.com/getting-started/install))
-- [Git](https://git-scm.com/downloads)
+## 📋 Smart Contract
 
-## Quickstart
+El contrato `EventManager.sol` es el núcleo de la aplicación y maneja toda la lógica de gestión de eventos.
 
-To get started with Scaffold-ETH 2, follow the steps below:
+### Estructura del Contrato
 
-1. Install dependencies if it was skipped in CLI:
-
+```solidity
+struct Event {
+    uint256 id;
+    string name;
+    string description;
+    uint256 date;
+    uint256 maxCapacity;
+    uint256 registeredCount;
+    bool isActive;
+}
 ```
-cd my-dapp-example
+
+### Funciones Principales
+
+- **`createEvent()`**: Permite al owner crear nuevos eventos académicos
+- **`register(uint256 _eventId)`**: Permite a los usuarios registrarse en un evento
+- **`getParticipants(uint256 _eventId)`**: Obtiene la lista de participantes registrados
+- **`validateAttendance(uint256 _eventId, address _participant)`**: El owner confirma la asistencia
+- **`hasCertificate(uint256 _eventId, address _participant)`**: Verifica si un participante tiene certificado
+- **`getAllEvents()`**: Retorna todos los eventos creados
+
+### Características de Seguridad
+
+- Control de acceso con `Ownable` de OpenZeppelin
+- Validaciones con custom errors para gas efficiency
+- Prevención de doble registro
+- Control de capacidad máxima de eventos
+- El owner no puede registrarse como participante
+
+## 🚀 Inicio Rápido
+
+### Requisitos Previos
+
+- [Node.js](https://nodejs.org/) (>= v20.18.3)
+- [Yarn](https://yarnpkg.com/) (v1 o v2+)
+- [Git](https://git-scm.com/)
+- Una wallet de Ethereum (MetaMask recomendado)
+
+### Instalación
+
+1. Clona el repositorio:
+
+```bash
+git clone <repository-url>
+cd gestion-eventos
+```
+
+2. Instala las dependencias:
+
+```bash
 yarn install
 ```
 
-2. Run a local network in the first terminal:
+3. Inicia la red local de Hardhat:
 
-```
+```bash
 yarn chain
 ```
 
-This command starts a local Ethereum network using Hardhat. The network runs on your local machine and can be used for testing and development. You can customize the network configuration in `packages/hardhat/hardhat.config.ts`.
+4. En otra terminal, despliega el contrato:
 
-3. On a second terminal, deploy the test contract:
-
-```
+```bash
 yarn deploy
 ```
 
-This command deploys a test smart contract to the local network. The contract is located in `packages/hardhat/contracts` and can be modified to suit your needs. The `yarn deploy` command uses the deploy script located in `packages/hardhat/deploy` to deploy the contract to the network. You can also customize the deploy script.
+1. En una tercera terminal, inicia la aplicación:
 
-4. On a third terminal, start your NextJS app:
-
-```
+```bash
 yarn start
 ```
 
-Visit your app on: `http://localhost:3000`. You can interact with your smart contract using the `Debug Contracts` page. You can tweak the app config in `packages/nextjs/scaffold.config.ts`.
+1. Abre tu navegador en `http://localhost:3000`
 
-Run smart contract test with `yarn hardhat:test`
+## 📁 Estructura del Proyecto
 
-- Edit your smart contracts in `packages/hardhat/contracts`
-- Edit your frontend homepage at `packages/nextjs/app/page.tsx`. For guidance on [routing](https://nextjs.org/docs/app/building-your-application/routing/defining-routes) and configuring [pages/layouts](https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts) checkout the Next.js documentation.
-- Edit your deployment scripts in `packages/hardhat/deploy`
+```text
+gestion-eventos/
+├── packages/
+│   ├── hardhat/
+│   │   ├── contracts/
+│   │   │   └── EventManager.sol      # Smart contract principal
+│   │   ├── deploy/
+│   │   │   └── 00_deploy_your_contract.ts
+│   │   └── hardhat.config.ts
+│   └── nextjs/
+│       ├── app/
+│       │   └── page.tsx              # Página principal
+│       ├── components/
+│       │   ├── EventCard.tsx         # Componente de tarjeta de evento
+│       │   └── ModalList.tsx         # Modal para listar participantes
+│       └── scaffold.config.ts
+└── README.md
+```
 
+## 🧪 Testing
 
-## Documentation
+Ejecuta los tests del smart contract:
 
-Visit our [docs](https://docs.scaffoldeth.io) to learn how to start building with Scaffold-ETH 2.
+```bash
+yarn hardhat:test
+```
 
-To know more about its features, check out our [website](https://scaffoldeth.io).
+Ejecuta el linter:
 
-## Contributing to Scaffold-ETH 2
+```bash
+yarn lint
+```
 
-We welcome contributions to Scaffold-ETH 2!
+## 🚀 Contrato Desplegado
 
-Please see [CONTRIBUTING.MD](https://github.com/scaffold-eth/scaffold-eth-2/blob/main/CONTRIBUTING.md) for more information and guidelines for contributing to Scaffold-ETH 2.
+El smart contract `EventManager` está desplegado en la red de prueba **Sepolia**.
+
+**Dirección del Contrato:**
+
+```text
+0x6634B8e1D363eFb7074Ff97cE62241Cdd759aD18
+```
+
+**Ver en Block Explorer:**
+
+- [Ver contrato en Sepolia Etherscan](https://sepolia.etherscan.io/address/0x6634B8e1D363eFb7074Ff97cE62241Cdd759aD18)
+
+Puedes interactuar con el contrato desplegado directamente desde la aplicación conectando tu wallet a la red Sepolia.
+
+## 🌐 Despliegue
+
+Para desplegar en una red de prueba o mainnet:
+
+1. Configura tus variables de entorno en `packages/hardhat/.env`
+2. Modifica `hardhat.config.ts` con la red deseada
+3. Ejecuta:
+
+```bash
+yarn deploy --network <network-name>
+```
+
+## 📝 Uso de la Aplicación
+
+### Como Administrador
+
+1. Conecta tu wallet (debe ser la cuenta owner del contrato)
+2. Usa la interfaz "Debug Contracts" para crear nuevos eventos
+3. Valida asistencias de participantes registrados
+
+### Como Participante
+
+1. Conecta tu wallet
+2. Navega por los eventos disponibles
+3. Haz clic en "Registrarse" en el evento deseado
+4. Confirma la transacción en tu wallet
+5. Visualiza la lista de participantes registrados
+
+## 🤝 Contribuciones
+
+Las contribuciones son bienvenidas. Por favor:
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT.
+
+## 🔗 Enlaces Útiles
+
+- [Documentación de Scaffold-ETH 2](https://docs.scaffoldeth.io)
+- [Solidity Documentation](https://docs.soliditylang.org/)
+- [Hardhat Documentation](https://hardhat.org/docs)
+- [Next.js Documentation](https://nextjs.org/docs)
